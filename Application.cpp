@@ -12,20 +12,25 @@ PCWSTR Application::ClassName() const {
 void Application::onPaint() {
 	PAINTSTRUCT ps;
 	HDC hdc = BeginPaint(hwnd, &ps);
-	Gdiplus::Graphics graphics(hdc);
-	graphics.SetInterpolationMode(Gdiplus::InterpolationModeNearestNeighbor);
+	int width = ps.rcPaint.right - ps.rcPaint.left;
+	int heigth = ps.rcPaint.bottom - ps.rcPaint.top;
+
+	HDC tempHdc = CreateCompatibleDC(hdc);
+	HBITMAP tempBm = CreateCompatibleBitmap(hdc, width, heigth);
+
+	SelectObject(tempHdc, tempBm);
+
+	Gdiplus::Graphics graphics(tempHdc);
+	FillRect(tempHdc, &ps.rcPaint, CreateSolidBrush(RGB(0, 0, 0)));
 	if (firstPaint)
 	{
-		FillRect(hdc, &ps.rcPaint, CreateSolidBrush(RGB(0, 0, 0)));
 		firstPaint = false;
 	}
 	Gdiplus::Bitmap bm(L"earth.png");
 
-	int width = ps.rcPaint.right - ps.rcPaint.left;
-	int heigth = ps.rcPaint.bottom - ps.rcPaint.top;
+
 	int imageSide = min(width, heigth);
 
-	//graphics.TranslateTransform(imageSide / 2, imageSide / 2);
 	graphics.TranslateTransform(width / 2, heigth / 2);
 	graphics.RotateTransform(rotation, Gdiplus::MatrixOrderPrepend);
 
@@ -35,6 +40,9 @@ void Application::onPaint() {
 		imageSide, imageSide
 	);
 
+	BitBlt(hdc, 0, 0, width, heigth, tempHdc, 0, 0, SRCCOPY);
+	DeleteObject(tempBm);
+	DeleteDC(tempHdc);
 
 	EndPaint(hwnd, &ps);
 }
@@ -51,11 +59,11 @@ void Application::onKeyDown(WPARAM key) {
 	switch (key) {
 	case VK_RIGHT:
 		rotationDirection = RotationDirection::RIGHT;
-		rotation += 20;
+		rotation += INCREMENT;
 		break;
 	case VK_LEFT:
 		rotationDirection = RotationDirection::LEFT;
-		rotation -= 20;
+		rotation -= INCREMENT;
 		break;
 	}
 }
@@ -80,7 +88,6 @@ LRESULT Application::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
-
 	case WM_PAINT:
 		onPaint();
 		return 0;
@@ -131,11 +138,12 @@ HWND Application::getHwnd() const {
 }
 
 Application::Application(HINSTANCE hInstance)
-	: NUMBER_OF_FRAMES(24),
+	: NUMBER_OF_FRAMES(60),
 	firstPaint(true),
 	timerState(TimerState::STOPPED),
 	rotationDirection(RotationDirection::NONE),
-	rotation(45){
+	rotation(45),
+	INCREMENT(5){
 	WNDCLASS wc = {};
 
 	wc.lpfnWndProc = WindowProc;
@@ -156,7 +164,7 @@ Application::Application(HINSTANCE hInstance)
 		this
 	);
 	if (hwnd == NULL) {
-		//throw
+		MessageBox(NULL, L"There was a problem when creating the window", L"Creation error", MB_OK);
 	}
 }
 

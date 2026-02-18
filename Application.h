@@ -24,6 +24,7 @@ private:
 	TimerState timerState;
 	RotationDirection rotationDirection;
 	int rotation;
+	const int INCREMENT;
 
 	PCWSTR ClassName() const;
 	void onPaint();
