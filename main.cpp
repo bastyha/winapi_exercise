@@ -15,8 +15,6 @@ int WINAPI wWinMain(
 	PWSTR pCmdLine,
 	int nCmdShow
 ) {
-	const wchar_t CLASS_NAME[] = L"Sample Window Class";
-
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR           gdiplusToken;
 
