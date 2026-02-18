@@ -22,10 +22,6 @@ void Application::onPaint() {
 
 	Gdiplus::Graphics graphics(tempHdc);
 	FillRect(tempHdc, &ps.rcPaint, CreateSolidBrush(RGB(0, 0, 0)));
-	if (firstPaint)
-	{
-		firstPaint = false;
-	}
 	Gdiplus::Bitmap bm(L"earth.png");
 
 
@@ -97,9 +93,8 @@ LRESULT Application::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	case WM_KEYUP:
 		onKeyUp(wParam);
 		return 0;
-	case WM_EXITSIZEMOVE:
+	case WM_SIZING:
 		InvalidateRect(hwnd, NULL, false);
-		firstPaint = true;
 		return 0;
 	case WM_TIMER:
 		onTimerExpire();
@@ -139,7 +134,6 @@ HWND Application::getHwnd() const {
 
 Application::Application(HINSTANCE hInstance)
 	: NUMBER_OF_FRAMES(60),
-	firstPaint(true),
 	timerState(TimerState::STOPPED),
 	rotationDirection(RotationDirection::NONE),
 	rotation(45),
