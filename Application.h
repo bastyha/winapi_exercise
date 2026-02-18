@@ -20,10 +20,10 @@ class Application {
 private:
 	HWND hwnd;
 	const int NUMBER_OF_FRAMES;
-	bool firstPaint;
 	TimerState timerState;
 	RotationDirection rotationDirection;
 	int rotation;
+	const int INCREMENT;
 
 	PCWSTR ClassName() const;
 	void onPaint();
