@@ -3,159 +3,11 @@
 #endif 
 
 #include <windows.h>
-#include <winuser.h>
+
 #include <gdiplus.h>
 #pragma comment (lib,"Gdiplus.lib")
 
-
-#include "helperClasses.cpp"
-
-class Application {
-private:
-	HWND hwnd;
-
-	bool firstPaint = true;
-	TimerState timerState = TimerState::STOPPED;
-	RotationDirection rotationDirection = RotationDirection::NONE;
-
-
-	PCWSTR ClassName() const {
-		return L"Winapi exercise";
-	}
-
-
-	void onPaint() {
-		PAINTSTRUCT ps;
-		HDC hdc = BeginPaint(hwnd, &ps);
-		if (firstPaint)
-		{
-			FillRect(hdc, &ps.rcPaint, CreateSolidBrush(RGB(0, 0, 0)));
-			firstPaint = false;
-		}
-		else {
-			FillRect(hdc, &ps.rcPaint, CreateSolidBrush(RGB(255, 0, 0)));
-		}
-		EndPaint(hwnd, &ps);
-	}
-
-	void onKeyDown(WPARAM key) {
-		if (timerState == TimerState::STOPPED) {
-			timerState = TimerState::RUNNING;
-			SetTimer(hwnd, timerState, 0, 0);
-		}
-		InvalidateRect(hwnd, NULL, FALSE);
-		switch (key) {
-		case VK_RIGHT:
-			rotationDirection = RotationDirection::RIGHT;
-			break;
-		case VK_LEFT:
-			rotationDirection = RotationDirection::LEFT;
-			break;
-		}
-	}
-
-	void onKeyUp(WPARAM key) {
-		if (key == VK_RIGHT
-			&& rotationDirection == RotationDirection::RIGHT
-			&& timerState == TimerState::RUNNING) {
-			KillTimer(hwnd, timerState);
-			timerState = TimerState::STOPPED;
-		}
-		else if (key == VK_LEFT
-			&& rotationDirection == RotationDirection::LEFT
-			&& timerState == TimerState::RUNNING) {
-			KillTimer(hwnd, timerState);
-			timerState = TimerState::STOPPED;
-		}
-	}
-
-public:
-	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-		Application* pThis = NULL;
-
-		if (uMsg == WM_NCCREATE)
-		{
-			CREATESTRUCT* pCreate = (CREATESTRUCT*)lParam;
-			pThis = (Application*)pCreate->lpCreateParams;
-			SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)pThis);
-			pThis->hwnd = hwnd;
-		}
-		else {
-			pThis = (Application*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-		}
-		if (pThis)
-		{
-			return pThis->HandleMessage(uMsg, wParam, lParam);
-		}
-		else {
-			return DefWindowProc(hwnd, uMsg, wParam, lParam);
-		}
-	}
-
-	HWND getHwnd()const {
-		return hwnd;
-	}
-
-
-	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-		switch (uMsg) {
-		case WM_DESTROY:
-			PostQuitMessage(0);
-			return 0;
-
-		case WM_PAINT:
-			onPaint();
-			return 0;
-		case WM_KEYDOWN:
-			onKeyDown(wParam);
-			return 0;
-		case WM_KEYUP:
-			onKeyUp(wParam);
-			return 0;
-		default:
-			return DefWindowProc(hwnd, uMsg, wParam, lParam);
-
-		}
-		return TRUE;
-	}
-
-
-	Application(HINSTANCE hInstance) {
-		WNDCLASS wc = {};
-
-		wc.lpfnWndProc = WindowProc;
-		wc.hInstance = hInstance;
-		wc.lpszClassName = ClassName();
-
-		RegisterClass(&wc);
-
-		hwnd = CreateWindowEx(
-			0,
-			ClassName(),
-			ClassName(),
-			WS_OVERLAPPEDWINDOW,
-			CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-			NULL,
-			NULL,
-			hInstance,
-			this
-		);
-		if (hwnd == NULL) {
-			//throw
-		}
-	}
-
-};
-
-
-using namespace Gdiplus;
-
-const int ANIMATION_TIMER_ID = 1;
-
-Bitmap* bm;
-
-LRESULT CALLBACK WindowProc(HWND hwnd,UINT uMsg,WPARAM wParam,LPARAM lParam);
-
+#include "Application.h"
 
 int WINAPI wWinMain(
 	HINSTANCE hInstance,
@@ -165,8 +17,7 @@ int WINAPI wWinMain(
 ) {
 	const wchar_t CLASS_NAME[] = L"Sample Window Class";
 
-	
-	GdiplusStartupInput gdiplusStartupInput;
+	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR           gdiplusToken;
 
 	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
@@ -180,71 +31,7 @@ int WINAPI wWinMain(
 		DispatchMessage(&msg);
 	}
 
-	GdiplusShutdown(gdiplusToken);
+	Gdiplus::GdiplusShutdown(gdiplusToken);
 
 	return 0;
-	
 }
-
-
-//void onPaint(HDC hdc, PAINTSTRUCT ps, ApplicationState* appState) {
-//	FillRect(hdc, &ps.rcPaint, CreateSolidBrush(RGB(0, 0, 0)));
-//	Graphics graphics(hdc);
-//	int width = ps.rcPaint.right - ps.rcPaint.left;
-//	int heigth = ps.rcPaint.bottom - ps.rcPaint.top;
-//	int imageSide = min(width, heigth);	
-//	int x = width / 2 - imageSide / 2;
-//	int y = heigth / 2 - imageSide / 2;
-//	
-//	Point destinationPoints[] = {
-//		Point(x, y),
-//		Point(x+imageSide, y),
-//		Point(x, y+imageSide)
-//	};
-//	pushImage( appState->rotationDegree, destinationPoints);
-//	graphics.DrawImage(
-//		bm,
-//		destinationPoints, 
-//		3
-//	);
-//}
-//
-//void onKeyDown(ApplicationState* appState, WPARAM key) {
-//	if (key == VK_RIGHT) {
-//		appState->direction = RotationDirection::LEFT;
-//	
-//	}
-//	else if (key == VK_LEFT) {
-//		appState->direction = RotationDirection::RIGHT;
-//	}
-//}
-//
-//void onKeyUp(ApplicationState* appState, WPARAM key) {
-//	appState->direction = RotationDirection::NONE;
-//}
-//
-//
-//LRESULT CALLBACK WindowProc(
-//	HWND hwnd,
-//	UINT uMsg,
-//	WPARAM wParam,
-//	LPARAM lParam
-//) {
-//
-//	switch (uMsg)
-//	{
-//	
-//		case WM_TIMER:
-//			if (appState->direction == RotationDirection::LEFT)
-//			{
-//				appState->rotationDegree -= 10;
-//			}
-//			else if (appState->direction == RotationDirection::RIGHT) {
-//				appState->rotationDegree += 10;
-//			}
-//			InvalidateRect(hwnd, NULL, FALSE);
-//			OutputDebugString(L"lol");
-//			return 0;
-//	}
-//	return DefWindowProc(hwnd, uMsg, wParam, lParam);
-//}

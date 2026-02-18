@@ -128,12 +128,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
-    <ClCompile Include="helperClasses.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="mathHelperFunctions.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="earth.jpg" />
+    <Image Include="earth.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Application.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
